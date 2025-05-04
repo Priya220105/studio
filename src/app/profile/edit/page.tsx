@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,6 +18,7 @@ import { Loader2 } from 'lucide-react';
 import { Header } from "@/components/layout/header";
 import type { Profile } from '@/types/profile';
 import { fetchUserProfile, updateProfile } from '@/lib/mock-data'; // Use centralized mock functions
+import { checkAndAwardProfileCompletionBadge } from '@/lib/gamification-utils'; // Import gamification check
 
 
 // Assume this is the ID of the currently logged-in user
@@ -25,6 +27,7 @@ const MOCK_LOGGED_IN_USER_ID = 'mock-user-id';
 
 
 // Define Zod schema for profile form validation
+// Does NOT include gamification fields as they are not directly editable here
 const profileSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters long." }),
   // Email is not included here as it's usually not editable or handled differently
@@ -33,7 +36,7 @@ const profileSchema = z.object({
   avatarUrl: z.string().url({ message: "Please enter a valid URL for the avatar." }).optional().or(z.literal('')),
 });
 
-// Form data type excludes non-editable fields like email, id
+// Form data type excludes non-editable fields like email, id, and gamification fields
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function EditProfilePage() {
@@ -93,9 +96,14 @@ export default function EditProfilePage() {
   const onSubmit = async (data: ProfileFormData) => {
     setIsSubmitting(true);
     try {
-      // The updateProfile function in mock-data now expects Partial<Omit<Profile, 'id' | 'email'>>
-      // and handles skill conversion internally
+      // The updateProfile function now expects only the editable fields
+      // It merges these with existing data, including gamification fields.
       const updatedProfile = await updateProfile(MOCK_LOGGED_IN_USER_ID, data);
+
+      // Check for profile completion badge after update
+      // Note: updateProfile in mock-data.ts already calls this
+      // await checkAndAwardProfileCompletionBadge(MOCK_LOGGED_IN_USER_ID, updatedProfile);
+
       toast({
         title: "Profile Updated!",
         description: "Your profile changes have been saved.",
@@ -221,4 +229,3 @@ export default function EditProfilePage() {
     </div>
   );
 }
-```

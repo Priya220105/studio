@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -13,7 +14,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Star } from 'lucide-react';
 import type { Feedback } from '@/types/feedback'; // Import Feedback type
-import { submitFeedbackApi } from '@/lib/mock-data'; // Use centralized mock function
+import { submitFeedbackApi } from '@/lib/mock-data'; // Use centralized mock function (which now triggers gamification)
+import { cn } from '@/lib/utils';
 
 // Define Zod schema for feedback form validation
 const feedbackSchema = z.object({
@@ -60,6 +62,7 @@ export function FeedbackForm({ projectId, recipientId, recipientName, authorId, 
         rating: data.rating,
         comment: data.comment,
       };
+      // submitFeedbackApi in mock-data.ts now handles triggering gamification checks
       const savedFeedback = await submitFeedbackApi(feedbackPayload);
       toast({
         title: "Feedback Submitted!",
@@ -83,12 +86,15 @@ export function FeedbackForm({ projectId, recipientId, recipientName, authorId, 
 
   const recipientRole = authorRole === 'client' ? 'freelancer' : 'client';
   const recipientDisplayName = recipientName || `the ${recipientRole}`;
+    // Determine project title for description
+    // In a real app, you might fetch this or pass it as a prop
+    const projectTitle = `Project ${projectId.substring(0, 5)}...`; // Placeholder
 
   return (
     <Card className="w-full max-w-lg">
       <CardHeader>
         <CardTitle>Leave Feedback</CardTitle>
-        <CardDescription>Share your experience with {recipientDisplayName} regarding project "{projectId}".</CardDescription> {/* Update description */}
+         <CardDescription>Share your experience with {recipientDisplayName} regarding project "{projectTitle}".</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -161,4 +167,3 @@ export function FeedbackForm({ projectId, recipientId, recipientName, authorId, 
     </Card>
   );
 }
-```

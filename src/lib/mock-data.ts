@@ -1,7 +1,9 @@
 
+
 import type { Project } from "@/types/project";
 import type { Profile } from "@/types/profile";
 import type { Feedback, RatingStats } from "@/types/feedback";
+import { awardBadge, awardPoints, checkAndAwardProfileCompletionBadge, checkAndAwardFirstProposalBadge, checkAndAwardFeedbackBadge, checkAndAwardPositiveFeedbackBadge } from '@/lib/gamification-utils'; // Import gamification utils
 
 
 // ==================================
@@ -18,7 +20,8 @@ export const mockProjects: Project[] = [
     categoryIcon: "ShoppingCart",
     clientId: "client-abc",
     clientName: "Global Mart Inc.",
-    clientAvatarUrl: `https://picsum.photos/40/40?random=clientA`
+    clientAvatarUrl: `https://picsum.photos/40/40?random=clientA`,
+    status: 'open',
   },
   {
     id: "2",
@@ -29,7 +32,8 @@ export const mockProjects: Project[] = [
     categoryIcon: "Smartphone",
      clientId: "client-def",
      clientName: "Productivity Co.",
-     clientAvatarUrl: `https://picsum.photos/40/40?random=clientB`
+     clientAvatarUrl: `https://picsum.photos/40/40?random=clientB`,
+     status: 'open',
   },
   {
     id: "3",
@@ -40,7 +44,9 @@ export const mockProjects: Project[] = [
     categoryIcon: "Palette",
      clientId: "client-ghi",
      clientName: "Innovate Solutions",
-     clientAvatarUrl: `https://picsum.photos/40/40?random=clientC`
+     clientAvatarUrl: `https://picsum.photos/40/40?random=clientC`,
+     status: 'completed', // Example completed project
+     freelancerId: 'freelancer1', // Bob Designer completed this
   },
    {
     id: "4",
@@ -51,7 +57,9 @@ export const mockProjects: Project[] = [
     categoryIcon: "PenTool",
     clientId: "client-jkl",
     clientName: "Future Tech Blog",
-    clientAvatarUrl: `https://picsum.photos/40/40?random=clientD`
+    clientAvatarUrl: `https://picsum.photos/40/40?random=clientD`,
+    status: 'in_progress', // Example in progress
+    freelancerId: 'freelancerC', // Ethan Writer is working on this
   },
   {
     id: "5",
@@ -62,7 +70,8 @@ export const mockProjects: Project[] = [
     categoryIcon: "BarChart",
     clientId: "client-mno",
     clientName: "Ad Insights Ltd.",
-    clientAvatarUrl: `https://picsum.photos/40/40?random=clientE`
+    clientAvatarUrl: `https://picsum.photos/40/40?random=clientE`,
+    status: 'open',
   },
    {
     id: "6",
@@ -73,44 +82,78 @@ export const mockProjects: Project[] = [
     categoryIcon: "Cog",
     clientId: "client-pqr",
     clientName: "DevOps Experts",
-    clientAvatarUrl: `https://picsum.photos/40/40?random=clientF`
+    clientAvatarUrl: `https://picsum.photos/40/40?random=clientF`,
+    status: 'open',
   },
+  // Example projects used in feedback
+    { id: "projA", title: "Project A", description: "...", budget: 100, deadline: new Date(), categoryIcon: 'Briefcase', clientId: 'client1', status: 'completed', freelancerId: 'mock-user-id' },
+    { id: "projB", title: "Project B", description: "...", budget: 200, deadline: new Date(), categoryIcon: 'Briefcase', clientId: 'client2', status: 'completed', freelancerId: 'mock-user-id' },
+    { id: "projC", title: "Project C", description: "...", budget: 300, deadline: new Date(), categoryIcon: 'Briefcase', clientId: 'client1', status: 'completed', freelancerId: 'mock-user-id' },
+    { id: "projD", title: "Project D - Logo Design", description: "...", budget: 400, deadline: new Date(), categoryIcon: 'Palette', clientId: 'client-ghi', status: 'completed', freelancerId: 'freelancer1' },
 ];
 
 // ==================================
 // Mock Profile Data
 // ==================================
 
+// Helper to add default gamification fields
+const createProfileWithGamification = (profileData: Omit<Profile, 'points' | 'level' | 'earnedBadgeIds'>): Profile => ({
+  ...profileData,
+  points: 0,
+  level: 1,
+  earnedBadgeIds: [],
+});
+
+
 export const mockProfiles: { [key: string]: Profile } = {
-    'mock-user-id': {
+    'mock-user-id': createProfileWithGamification({
         id: "mock-user-id",
         name: "Alice Developer",
         email: "alice.dev@example.com",
         skills: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Node.js", "Firebase"],
         bio: "Experienced full-stack web developer specializing in modern frontend frameworks (React/Next.js) and Node.js backends. Passionate about creating intuitive, performant, and accessible user interfaces. Familiar with cloud platforms like Firebase and Vercel.",
         avatarUrl: `https://picsum.photos/100/100?random=alice`,
-    },
-    'freelancer1': {
+    }),
+    'freelancer1': createProfileWithGamification({
         id: "freelancer1",
         name: "Bob Designer",
         email: "bob.design@example.com",
         skills: ["UI/UX Design", "Figma", "Adobe XD", "Brand Identity", "Logo Design", "Graphic Design"],
         bio: "Creative UI/UX designer with a strong focus on user-centered design principles. Proficient in Figma and Adobe Creative Suite. Experience in creating branding guidelines and visually appealing interfaces.",
         avatarUrl: `https://picsum.photos/100/100?random=bob`,
-    },
-    'freelancerA': { id: 'freelancerA', name: 'Charlie Coder', email: 'charlie@example.com', skills: ['Python', 'Data Analysis', 'SQL'], bio: 'Data analyst.'},
-    'freelancerB': { id: 'freelancerB', name: 'Diana DevOps', email: 'diana@example.com', skills: ['AWS', 'Docker', 'CI/CD', 'GitHub Actions'], bio: 'DevOps Engineer.'},
-    'freelancerC': { id: 'freelancerC', name: 'Ethan Writer', email: 'ethan@example.com', skills: ['Content Writing', 'SEO', 'Blog Writing'], bio: 'Content writer.'},
-     // Add clients as profiles too if needed for feedback etc.
-     'client-abc': { id: 'client-abc', name: 'Global Mart Inc.', email: 'contact@globalmart.com', skills: [], bio: 'Retail company.'},
-     'client-def': { id: 'client-def', name: 'Productivity Co.', email: 'hello@prodco.com', skills: [], bio: 'Software company.'},
-     'client-ghi': { id: 'client-ghi', name: 'Innovate Solutions', email: 'info@innovate.com', skills: [], bio: 'Tech startup consulting.'},
-     'client-jkl': { id: 'client-jkl', name: 'Future Tech Blog', email: 'editor@futuretech.com', skills: [], bio: 'Technology publication.'},
-     'client-mno': { id: 'client-mno', name: 'Ad Insights Ltd.', email: 'analyze@adinsights.com', skills: [], bio: 'Marketing analytics firm.'},
-     'client-pqr': { id: 'client-pqr', name: 'DevOps Experts', email: 'support@devopsexperts.com', skills: [], bio: 'DevOps consulting agency.'},
-     'client1': { id: 'client1', name: 'Client One Inc.', email: 'client1@example.com', skills: [], bio: 'Client company.'},
-     'client2': { id: 'client2', name: 'Client Two Co.', email: 'client2@example.com', skills: [], bio: 'Another client company.'},
+    }),
+    'freelancerA': createProfileWithGamification({ id: 'freelancerA', name: 'Charlie Coder', email: 'charlie@example.com', skills: ['Python', 'Data Analysis', 'SQL'], bio: 'Data analyst.'}),
+    'freelancerB': createProfileWithGamification({ id: 'freelancerB', name: 'Diana DevOps', email: 'diana@example.com', skills: ['AWS', 'Docker', 'CI/CD', 'GitHub Actions'], bio: 'DevOps Engineer.'}),
+    'freelancerC': createProfileWithGamification({ id: 'freelancerC', name: 'Ethan Writer', email: 'ethan@example.com', skills: ['Content Writing', 'SEO', 'Blog Writing'], bio: 'Content writer.'}),
+     // Clients with basic gamification state
+     'client-abc': createProfileWithGamification({ id: 'client-abc', name: 'Global Mart Inc.', email: 'contact@globalmart.com', skills: [], bio: 'Retail company.'}),
+     'client-def': createProfileWithGamification({ id: 'client-def', name: 'Productivity Co.', email: 'hello@prodco.com', skills: [], bio: 'Software company.'}),
+     'client-ghi': createProfileWithGamification({ id: 'client-ghi', name: 'Innovate Solutions', email: 'info@innovate.com', skills: [], bio: 'Tech startup consulting.'}),
+     'client-jkl': createProfileWithGamification({ id: 'client-jkl', name: 'Future Tech Blog', email: 'editor@futuretech.com', skills: [], bio: 'Technology publication.'}),
+     'client-mno': createProfileWithGamification({ id: 'client-mno', name: 'Ad Insights Ltd.', email: 'analyze@adinsights.com', skills: [], bio: 'Marketing analytics firm.'}),
+     'client-pqr': createProfileWithGamification({ id: 'client-pqr', name: 'DevOps Experts', email: 'support@devopsexperts.com', skills: [], bio: 'DevOps consulting agency.'}),
+     'client1': createProfileWithGamification({ id: 'client1', name: 'Client One Inc.', email: 'client1@example.com', skills: [], bio: 'Client company.'}),
+     'client2': createProfileWithGamification({ id: 'client2', name: 'Client Two Co.', email: 'client2@example.com', skills: [], bio: 'Another client company.'}),
 };
+
+// Apply some initial badges/points for demonstration
+if (mockProfiles['mock-user-id']) {
+    mockProfiles['mock-user-id'] = awardBadge(mockProfiles['mock-user-id'], 'profile-complete');
+    mockProfiles['mock-user-id'] = awardBadge(mockProfiles['mock-user-id'], 'feedback-received-positive'); // Alice received a 5-star rating
+}
+if (mockProfiles['freelancer1']) {
+    mockProfiles['freelancer1'] = awardBadge(mockProfiles['freelancer1'], 'profile-complete');
+    mockProfiles['freelancer1'] = awardBadge(mockProfiles['freelancer1'], 'first-win'); // Bob won project D
+    mockProfiles['freelancer1'] = awardBadge(mockProfiles['freelancer1'], 'project-completed-freelancer');
+}
+if (mockProfiles['client1']) {
+    mockProfiles['client1'] = awardBadge(mockProfiles['client1'], 'feedback-given'); // Client1 gave feedback to Alice
+}
+if (mockProfiles['client-ghi']) {
+     mockProfiles['client-ghi'] = awardBadge(mockProfiles['client-ghi'], 'first-hire'); // Client GHI hired Bob
+     mockProfiles['client-ghi'] = awardBadge(mockProfiles['client-ghi'], 'project-completed-client');
+     mockProfiles['client-ghi'] = awardBadge(mockProfiles['client-ghi'], 'feedback-given'); // Client GHI gave feedback to Bob
+}
 
 
 // ==================================
@@ -143,49 +186,111 @@ export const mockFeedback: Feedback[] = [
 export async function fetchAllProjects(): Promise<Project[]> {
     console.log("API: Fetching all projects...");
     await new Promise(resolve => setTimeout(resolve, 300));
-    return mockProjects;
+    // Add status if missing from original data
+    return mockProjects.map(p => ({ ...p, status: p.status || 'open' }));
 }
 
 export async function fetchProjectDetails(projectId: string): Promise<Project | null> {
     console.log(`API: Fetching project details for ID: ${projectId}`);
     await new Promise(resolve => setTimeout(resolve, 300));
     const project = mockProjects.find(p => p.id === projectId);
-    return project || null;
+    if (!project) return null;
+    // Add status if missing
+    return { ...project, status: project.status || 'open' };
 }
 
 // --- Profiles ---
 export async function fetchUserProfile(userId: string): Promise<Profile | null> {
     console.log(`API: Fetching user profile for ID: ${userId}...`);
     await new Promise(resolve => setTimeout(resolve, 400));
-    return mockProfiles[userId] || null;
+    const profile = mockProfiles[userId];
+    // Return profile with defaults if found, otherwise null
+    return profile ? {
+        ...profile,
+        points: profile.points ?? 0,
+        level: profile.level ?? 1,
+        earnedBadgeIds: profile.earnedBadgeIds ?? [],
+     } : null;
 }
 
 export async function saveProfile(userId: string, data: Omit<Profile, 'id'>): Promise<Profile> {
   console.log(`API: Saving profile data for user ${userId}:`, data);
   await new Promise(resolve => setTimeout(resolve, 1000));
-  const newProfile = { ...data, id: userId };
+
+  // Initialize gamification fields if creating a new profile
+  const newProfile = {
+      ...data,
+      id: userId,
+      points: data.points ?? 0,
+      level: data.level ?? 1,
+      earnedBadgeIds: data.earnedBadgeIds ?? [],
+  };
+
   mockProfiles[userId] = newProfile; // Update mock data store
+
+  // Check for profile completion badge after saving
+  await checkAndAwardProfileCompletionBadge(userId, newProfile);
+
   return newProfile;
 }
 
 export async function updateProfile(userId: string, data: Partial<Omit<Profile, 'id' | 'email'>>): Promise<Profile> {
   console.log(`API: Updating profile data for user ${userId}:`, data);
   await new Promise(resolve => setTimeout(resolve, 1000));
-  if (!mockProfiles[userId]) {
+  const currentProfile = await fetchUserProfile(userId); // Use fetch to get profile with defaults
+  if (!currentProfile) {
       throw new Error("Profile not found for update");
   }
   // Merge updates, ensure skills are handled correctly
   const updatedSkills = data.skills !== undefined
     ? (Array.isArray(data.skills) ? data.skills : data.skills.split(',').map(s => s.trim()).filter(s => s))
-    : mockProfiles[userId].skills;
+    : currentProfile.skills;
 
-  mockProfiles[userId] = {
-      ...mockProfiles[userId],
+  // Merge potentially updated gamification fields too
+  const updatedProfileData = {
+      ...currentProfile,
       ...data,
       skills: updatedSkills,
+      points: data.points !== undefined ? data.points : currentProfile.points,
+      level: data.level !== undefined ? data.level : currentProfile.level,
+      earnedBadgeIds: data.earnedBadgeIds !== undefined ? data.earnedBadgeIds : currentProfile.earnedBadgeIds,
   };
-  return mockProfiles[userId];
+
+  mockProfiles[userId] = updatedProfileData; // Update mock data store
+
+  // Check for profile completion badge after update
+  await checkAndAwardProfileCompletionBadge(userId, updatedProfileData);
+
+  return updatedProfileData;
 }
+
+// Function to update profile specifically for gamification changes
+// In a real DB, this might be combined or use specific update paths
+export async function updateProfileGamification(userId: string, updates: { points?: number; level?: number; earnedBadgeIds?: string[] }): Promise<Profile | null> {
+    console.log(`API: Updating gamification for user ${userId}:`, updates);
+    await new Promise(resolve => setTimeout(resolve, 100)); // Faster simulation for internal updates
+    const currentProfile = mockProfiles[userId];
+    if (!currentProfile) {
+        console.error(`Profile not found for gamification update: ${userId}`);
+        return null;
+    }
+
+    // Ensure defaults are present before merging
+    const profileWithDefaults = {
+        ...currentProfile,
+        points: currentProfile.points ?? 0,
+        level: currentProfile.level ?? 1,
+        earnedBadgeIds: currentProfile.earnedBadgeIds ?? [],
+    };
+
+    const updatedProfile = {
+        ...profileWithDefaults,
+        ...updates,
+    };
+    mockProfiles[userId] = updatedProfile;
+    return updatedProfile;
+}
+
 
 // --- Proposals ---
 // Mock function - replace with actual API call
@@ -194,6 +299,9 @@ export async function submitProposalApi(projectId: string, freelancerId: string,
     await new Promise(resolve => setTimeout(resolve, 1500));
     // In a real app, save this to DB
     console.log("Proposal saved (simulated).");
+
+    // Trigger gamification check
+    await checkAndAwardFirstProposalBadge(freelancerId);
 }
 
 
@@ -253,5 +361,10 @@ export async function submitFeedbackApi(data: Omit<Feedback, 'id' | 'submittedAt
       submittedAt: new Date(),
   };
   mockFeedback.push(newFeedback); // Add to mock data store
+
+  // Trigger gamification checks
+  await checkAndAwardFeedbackBadge(data.authorId, data.authorRole);
+  await checkAndAwardPositiveFeedbackBadge(data.recipientId, data.rating);
+
   return newFeedback;
 }

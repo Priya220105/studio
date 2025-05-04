@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -17,6 +18,8 @@ import { Loader2 } from 'lucide-react';
 import { Header } from "@/components/layout/header";
 import type { Profile } from '@/types/profile'; // Assuming profile type exists
 import { saveProfile } from '@/lib/mock-data'; // Use centralized mock function
+import { checkAndAwardProfileCompletionBadge } from '@/lib/gamification-utils'; // Import gamification check
+
 
 // Assume this is the ID of the currently logged-in user
 // Replace with actual authentication logic
@@ -56,15 +59,24 @@ export default function CreateProfilePage() {
   const onSubmit = async (data: ProfileFormData) => {
     setIsSubmitting(true);
     try {
-        // Construct the full profile data including email and ID
+        // Construct the full profile data including email, ID, and initial gamification state
         const fullProfileData: Omit<Profile, 'id'> = {
             ...data,
             email: MOCK_LOGGED_IN_USER_EMAIL, // Add email back
             skills: data.skills ? data.skills.split(',').map(s => s.trim()).filter(s => s) : [], // Convert skills string to array
             avatarUrl: data.avatarUrl || `https://picsum.photos/100/100?random=${MOCK_LOGGED_IN_USER_ID}`, // Default avatar if none provided
+            // Initialize gamification fields
+            points: 0,
+            level: 1,
+            earnedBadgeIds: [],
         };
 
       const savedProfile = await saveProfile(MOCK_LOGGED_IN_USER_ID, fullProfileData);
+
+      // Now check for profile completion badge award after saving
+      // Note: saveProfile in mock-data.ts already calls this, so this might be redundant depending on implementation
+      // await checkAndAwardProfileCompletionBadge(MOCK_LOGGED_IN_USER_ID, savedProfile);
+
       toast({
         title: "Profile Created!",
         description: "Your profile has been successfully saved.",
@@ -177,4 +189,3 @@ export default function CreateProfilePage() {
     </div>
   );
 }
-```

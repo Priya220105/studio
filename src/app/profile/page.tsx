@@ -1,4 +1,5 @@
 
+
 'use client'; // Required for useState, useEffect, etc.
 
 import { useState, useEffect } from 'react';
@@ -16,6 +17,8 @@ import { FeedbackList } from '@/components/feedback-list'; // Import FeedbackLis
 import type { Feedback, RatingStats } from '@/types/feedback'; // Import Feedback types
 import { Separator } from '@/components/ui/separator';
 import { fetchUserProfile, fetchUserFeedback } from '@/lib/mock-data'; // Use centralized mock functions
+import { LevelProgress } from '@/components/gamification/level-progress'; // Import LevelProgress
+import { EarnedBadges } from '@/components/gamification/earned-badges'; // Import EarnedBadges
 
 // Assume this is the ID of the currently logged-in user
 // Replace with actual authentication logic
@@ -32,11 +35,19 @@ export default function ProfilePage() {
     setIsLoading(true);
     fetchUserProfile(MOCK_LOGGED_IN_USER_ID) // Use the logged-in user ID
       .then(async (profileData) => {
-        setProfile(profileData);
-        if (profileData) {
+        // Simulate initial gamification state if missing
+        const profileWithDefaults = profileData ? {
+            ...profileData,
+            points: profileData.points ?? 0,
+            level: profileData.level ?? 1,
+            earnedBadgeIds: profileData.earnedBadgeIds ?? [],
+        } : null;
+        setProfile(profileWithDefaults);
+
+        if (profileWithDefaults) {
            // If profile exists, fetch feedback for this user
            try {
-                const feedbackResult = await fetchUserFeedback(profileData.id);
+                const feedbackResult = await fetchUserFeedback(profileWithDefaults.id);
                 setFeedbackData(feedbackResult);
            } catch (feedbackError) {
                 console.error("Error fetching feedback:", feedbackError);
@@ -85,7 +96,7 @@ export default function ProfilePage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                         <p className="text-muted-foreground mb-4">Create your profile to start bidding on projects and use AI matching.</p>
+                         <p className="text-muted-foreground mb-4">Create your profile to start bidding on projects and engage with the platform features.</p>
                          <Link href="/profile/create" passHref>
                              <Button>Create Profile</Button>
                          </Link>
@@ -113,20 +124,24 @@ export default function ProfilePage() {
               </Avatar>
               <CardTitle className="text-2xl">{profile.name}</CardTitle>
               <p className="text-sm text-muted-foreground">{profile.email}</p>
+
+              {/* Gamification Level Progress */}
+              <LevelProgress profile={profile} className="mt-4 w-full px-4" />
+
               {/* Display Average Rating */}
               {feedbackData && feedbackData.stats.totalRatings > 0 && (
                   <RatingDisplay
                     rating={feedbackData.stats.averageRating}
                     totalRatings={feedbackData.stats.totalRatings}
-                    className="mt-2 justify-center"
+                    className="mt-3 justify-center"
                   />
               )}
                {feedbackData && feedbackData.stats.totalRatings === 0 && (
-                   <p className="text-sm text-muted-foreground mt-2">No ratings yet</p>
+                   <p className="text-sm text-muted-foreground mt-3">No ratings yet</p>
                )}
                 {/* Loading state for ratings */}
                {!feedbackData && (
-                    <div className="flex items-center justify-center mt-2">
+                    <div className="flex items-center justify-center mt-3">
                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-2" />
                         <span className="text-sm text-muted-foreground">Loading ratings...</span>
                     </div>
@@ -147,6 +162,11 @@ export default function ProfilePage() {
                       )}
                   </div>
               </div>
+
+              {/* Earned Badges Section */}
+              <Separator />
+              <EarnedBadges profile={profile} />
+
               <div className="pt-4 border-t mt-6">
                   <Link href="/profile/edit" passHref>
                       <Button className="w-full" variant="outline">Edit Profile</Button>
@@ -183,4 +203,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-```

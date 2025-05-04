@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,7 +19,8 @@ import { Loader2, Wand2, ArrowLeft } from 'lucide-react'; // Add ArrowLeft
 import type { Project } from "@/types/project";
 import { Header } from "@/components/layout/header";
 import { fetchProjectDetails, submitProposalApi } from '@/lib/mock-data'; // Use centralized mock functions
-import { cn } from '@/lib/utils'; // Import cn utility
+import { cn } from "@/lib/utils"; // Import cn utility
+import { checkAndAwardFirstProposalBadge } from '@/lib/gamification-utils'; // Import gamification check
 
 // Assume this is the ID of the currently logged-in user
 // Replace with actual authentication logic
@@ -123,6 +125,7 @@ export default function SubmitProposalPage() {
     setIsSubmitting(true);
     try {
       // Use the centralized mock API function
+      // Note: submitProposalApi in mock-data.ts now triggers the gamification check
       await submitProposalApi(project.id, MOCK_LOGGED_IN_USER_ID, data);
       toast({
         title: "Proposal Submitted!",
