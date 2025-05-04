@@ -33,8 +33,8 @@ export default function RootLayout({
   return (
     // Apply font variables using cn utility on the html tag
     <html lang="en" className={cn("antialiased", inter.variable, roboto_mono.variable)} suppressHydrationWarning>
-      {/* Use body for base font application */}
-      <body className="font-sans">
+      {/* Use body for base font application and add suppressHydrationWarning */}
+      <body className="font-sans" suppressHydrationWarning>
         {children}
         <Toaster />
       </body>
