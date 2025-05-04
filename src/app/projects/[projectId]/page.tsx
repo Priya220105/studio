@@ -233,4 +233,3 @@ declare module '@/types/project' {
         freelancerId?: string; // ID of the hired freelancer
     }
 }
-```
