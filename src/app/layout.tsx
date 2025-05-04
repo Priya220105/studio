@@ -1,21 +1,22 @@
+
 import type { Metadata } from 'next';
-// Replace Geist fonts with standard Google Fonts
-import { Inter, Roboto_Mono } from 'next/font/google';
+import { Inter, Roboto_Mono } from 'next/font/google'; // Keep original font imports
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { cn } from "@/lib/utils"; // Import cn utility
 
 // Configure Inter font
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-inter', // Use a standard variable name
+  variable: '--font-inter',
 });
 
 // Configure Roboto Mono font
 const roboto_mono = Roboto_Mono({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-roboto-mono', // Use a standard variable name
+  variable: '--font-roboto-mono',
 });
 
 
@@ -30,9 +31,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // Apply the font variables to the html tag for global scope
-    <html lang="en" className={`${inter.variable} ${roboto_mono.variable}`}>
-      <body className={`antialiased`}> {/* Removed font class from body, it's on html now */}
+    // Apply font variables using cn utility on the html tag
+    <html lang="en" className={cn("antialiased", inter.variable, roboto_mono.variable)} suppressHydrationWarning>
+      {/* Use body for base font application */}
+      <body className="font-sans">
         {children}
         <Toaster />
       </body>

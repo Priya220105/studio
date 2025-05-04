@@ -1,11 +1,12 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  /* Use the Inter font variable defined in layout.tsx */
+/* Removed direct font-family application from body */
+/* body {
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
-}
+} */
 
 @layer base {
   :root {
@@ -42,6 +43,10 @@ body {
     --sidebar-accent-foreground: 240 10% 3.9%; /* Dark Gray */
     --sidebar-border: 0 0% 89.8%; /* Lighter Gray Border */
     --sidebar-ring: 180 100% 25.1%; /* Teal */
+
+    /* Added font variables */
+    --font-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono: var(--font-roboto-mono), Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
   .dark {
     --background: 240 10% 3.9%; /* Dark Blue-Gray */
@@ -76,6 +81,8 @@ body {
     --sidebar-accent-foreground: 0 0% 98%; /* Almost White */
     --sidebar-border: 240 4% 20%; /* Slightly Lighter Dark Gray */
     --sidebar-ring: 180 80% 45%; /* Lighter Teal */
+
+    /* Font variables already defined in :root, no need to redefine for dark */
   }
 }
 
@@ -84,13 +91,13 @@ body {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans; /* Apply base font here */
      /* Ensure font smoothing */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   /* Apply monospace font to relevant elements */
   code, kbd, samp, pre {
-    font-family: var(--font-roboto-mono), monospace;
+    @apply font-mono; /* Apply mono font here */
   }
 }
