@@ -1,3 +1,4 @@
+
 /**
  * Represents a project available for bidding.
  */
@@ -26,6 +27,18 @@ export interface Project {
    * Icon name representing the project category (maps to lucide-react icons).
    */
   categoryIcon: string;
+   /**
+    * Optional: ID of the client who posted the project.
+    */
+   clientId?: string;
+   /**
+    * Optional: Name of the client (company or individual).
+    */
+   clientName?: string;
+   /**
+    * Optional: URL for the client's avatar or logo.
+    */
+   clientAvatarUrl?: string;
 }
 
 /**
@@ -61,3 +74,4 @@ export interface Proposal {
    */
   submittedAt: Date;
 }
+
