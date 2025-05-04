@@ -255,4 +255,3 @@ export async function submitFeedbackApi(data: Omit<Feedback, 'id' | 'submittedAt
   mockFeedback.push(newFeedback); // Add to mock data store
   return newFeedback;
 }
-```

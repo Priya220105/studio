@@ -18,6 +18,7 @@ import { Loader2, Wand2, ArrowLeft } from 'lucide-react'; // Add ArrowLeft
 import type { Project } from "@/types/project";
 import { Header } from "@/components/layout/header";
 import { fetchProjectDetails, submitProposalApi } from '@/lib/mock-data'; // Use centralized mock functions
+import { cn } from '@/lib/utils'; // Import cn utility
 
 // Assume this is the ID of the currently logged-in user
 // Replace with actual authentication logic
@@ -250,4 +251,3 @@ export default function SubmitProposalPage() {
     </div>
   );
 }
-```
