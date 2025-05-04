@@ -15,7 +15,7 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-8">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary">
           <Briefcase className="h-6 w-6" />
-          <span>Freelaunch</span> {/* Changed name */}
+          <span>TaskTender</span> {/* Changed name */}
         </Link>
         <nav className="hidden md:flex gap-6 text-sm font-medium">
           <Link href="/projects" className="text-foreground/60 hover:text-foreground transition-colors">
@@ -47,7 +47,7 @@ export function Header() {
                   className="flex items-center gap-2 text-lg font-semibold text-primary"
                   >
                   <Briefcase className="h-6 w-6" />
-                  <span>Freelaunch</span> {/* Changed name */}
+                  <span>TaskTender</span> {/* Changed name */}
                 </Link>
                 <Separator />
                 <Link
