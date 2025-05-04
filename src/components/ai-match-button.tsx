@@ -100,4 +100,3 @@ export function AiMatchButton({ freelancerProfile, availableProjects, onMatchesF
         </Button>
     );
 }
-```
