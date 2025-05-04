@@ -7,6 +7,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { Button } from '../ui/button';
+import { Separator } from '../ui/separator'; // Added Separator import
 
 export function Header() {
   return (
@@ -14,7 +15,7 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-8">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary">
           <Briefcase className="h-6 w-6" />
-          <span>BidCraft</span>
+          <span>Freelaunch</span> {/* Changed name */}
         </Link>
         <nav className="hidden md:flex gap-6 text-sm font-medium">
           <Link href="/projects" className="text-foreground/60 hover:text-foreground transition-colors">
@@ -46,7 +47,7 @@ export function Header() {
                   className="flex items-center gap-2 text-lg font-semibold text-primary"
                   >
                   <Briefcase className="h-6 w-6" />
-                  <span>BidCraft</span>
+                  <span>Freelaunch</span> {/* Changed name */}
                 </Link>
                 <Separator />
                 <Link
@@ -81,33 +82,3 @@ export function Header() {
     </header>
   );
 }
-
-// Add Separator component if not already globally available
-// Normally you'd import this, but adding it here for completeness if needed in isolation
-import * as React from "react"
-import * as SeparatorPrimitive from "@radix-ui/react-separator"
-import { cn } from "@/lib/utils"
-
-const Separator = React.forwardRef<
-  React.ElementRef<typeof SeparatorPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>
->(
-  (
-    { className, orientation = "horizontal", decorative = true, ...props },
-    ref
-  ) => (
-    <SeparatorPrimitive.Root
-      ref={ref}
-      decorative={decorative}
-      orientation={orientation}
-      className={cn(
-        "shrink-0 bg-border",
-        orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
-        className
-      )}
-      {...props}
-    />
-  )
-)
-Separator.displayName = SeparatorPrimitive.Root.displayName
-

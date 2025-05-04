@@ -21,7 +21,7 @@ const roboto_mono = Roboto_Mono({
 
 
 export const metadata: Metadata = {
-  title: 'BidCraft',
+  title: 'Freelaunch', // Changed title
   description: 'Project bidding app for freelancers',
 };
 
