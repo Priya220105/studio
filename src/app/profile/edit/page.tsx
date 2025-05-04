@@ -16,52 +16,24 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { Header } from "@/components/layout/header";
 import type { Profile } from '@/types/profile';
-
-// Mock function to fetch user profile data - replace with actual API call
-async function fetchUserProfile(): Promise<Profile | null> {
-    console.log("Fetching user profile for editing...");
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Simulate profile exists
-    return {
-        id: "mock-user-id",
-        name: "Freelancer Name",
-        email: "freelancer@example.com", // Should come from auth ideally
-        skills: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Web Design"],
-        bio: "Experienced web developer specializing in modern frontend frameworks. Passionate about creating intuitive and performant user interfaces.",
-        avatarUrl: `https://picsum.photos/100/100?random=${Math.ceil(Math.random() * 10)}`,
-    };
-    // Simulate not found scenario if needed for testing
-    // return null;
-}
-
-// Placeholder function for saving profile data - replace with actual API call
-async function updateProfile(data: ProfileFormData): Promise<Profile> {
-  console.log("Updating profile data:", data);
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  // Simulate success - return the updated data
-  return {
-      id: 'mock-user-id', // Use the same ID
-      name: data.name,
-      email: data.email, // Usually email is not editable or handled differently
-      bio: data.bio,
-      skills: data.skills.split(',').map(s => s.trim()).filter(s => s),
-      avatarUrl: data.avatarUrl || `https://picsum.photos/100/100?random=${Math.random()}`,
-  };
-}
+import { fetchUserProfile, updateProfile } from '@/lib/mock-data'; // Use centralized mock functions
 
 
-// Define Zod schema for profile form validation (same as create)
+// Assume this is the ID of the currently logged-in user
+// Replace with actual authentication logic
+const MOCK_LOGGED_IN_USER_ID = 'mock-user-id';
+
+
+// Define Zod schema for profile form validation
 const profileSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters long." }),
-  email: z.string().email({ message: "Please enter a valid email address." }), // Consider if email should be editable
+  // Email is not included here as it's usually not editable or handled differently
   bio: z.string().max(500, { message: "Bio cannot exceed 500 characters." }).optional(),
   skills: z.string().max(200, { message: "Skills list cannot exceed 200 characters." }).optional().describe('Comma-separated list of skills'),
   avatarUrl: z.string().url({ message: "Please enter a valid URL for the avatar." }).optional().or(z.literal('')),
 });
 
+// Form data type excludes non-editable fields like email, id
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function EditProfilePage() {
@@ -69,12 +41,12 @@ export default function EditProfilePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentEmail, setCurrentEmail] = useState(''); // State to hold the non-editable email
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: "",
-      email: "",
       bio: "",
       skills: "",
       avatarUrl: "",
@@ -84,25 +56,25 @@ export default function EditProfilePage() {
   // Fetch existing profile data on component mount
   useEffect(() => {
     setIsLoading(true);
-    fetchUserProfile()
+    fetchUserProfile(MOCK_LOGGED_IN_USER_ID)
       .then(data => {
         if (data) {
           // Populate the form with fetched data
           form.reset({
             name: data.name,
-            email: data.email,
             bio: data.bio || "",
             skills: data.skills.join(', ') || "", // Join skills array for input
             avatarUrl: data.avatarUrl || "",
           });
+          setCurrentEmail(data.email); // Store the email separately
         } else {
-          // Handle case where profile doesn't exist (e.g., redirect or show error)
+          // Handle case where profile doesn't exist
           toast({
             title: "Profile Not Found",
-            description: "Cannot edit a profile that doesn't exist.",
+            description: "Cannot edit a profile that doesn't exist. Please create one first.",
             variant: "destructive",
           });
-          router.push('/profile'); // Redirect to profile view or create page
+          router.push('/profile/create'); // Redirect to create page
         }
       })
       .catch(error => {
@@ -112,6 +84,7 @@ export default function EditProfilePage() {
           description: "Failed to load profile data for editing.",
           variant: "destructive",
         });
+         router.push('/profile'); // Redirect back on error
       })
       .finally(() => setIsLoading(false));
   }, [form, router, toast]);
@@ -120,7 +93,9 @@ export default function EditProfilePage() {
   const onSubmit = async (data: ProfileFormData) => {
     setIsSubmitting(true);
     try {
-      const updatedProfile = await updateProfile(data);
+      // The updateProfile function in mock-data now expects Partial<Omit<Profile, 'id' | 'email'>>
+      // and handles skill conversion internally
+      const updatedProfile = await updateProfile(MOCK_LOGGED_IN_USER_ID, data);
       toast({
         title: "Profile Updated!",
         description: "Your profile changes have been saved.",
@@ -168,27 +143,22 @@ export default function EditProfilePage() {
                     <FormItem>
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                        <Input placeholder="e.g., Jane Doe" {...field} disabled={isSubmitting}/>
+                        <Input placeholder="e.g., Alice Developer" {...field} disabled={isSubmitting}/>
                         </FormControl>
                         <FormMessage />
                     </FormItem>
                     )}
                 />
-                 <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Email Address</FormLabel>
-                        <FormControl>
-                        {/* Consider making email read-only or handling verification */}
-                        <Input type="email" placeholder="e.g., jane.doe@example.com" {...field} disabled={isSubmitting /* || true */} />
-                        </FormControl>
-                         {/* {true && <p className="text-sm text-muted-foreground">Email cannot be changed.</p>} */}
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+                 {/* Email Field - Display Only */}
+                 <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                    <Input type="email" value={currentEmail} disabled readOnly />
+                    </FormControl>
+                    <p className="text-sm text-muted-foreground">Email cannot be changed here.</p>
+                    <FormMessage />
+                </FormItem>
+
                  <FormField
                     control={form.control}
                     name="bio"
@@ -197,7 +167,7 @@ export default function EditProfilePage() {
                         <FormLabel>Bio</FormLabel>
                         <FormControl>
                         <Textarea
-                            placeholder="Tell clients about yourself and your experience..."
+                            placeholder="Tell clients about yourself and your experience (max 500 chars)..."
                             rows={4}
                             {...field}
                             disabled={isSubmitting}
@@ -251,3 +221,4 @@ export default function EditProfilePage() {
     </div>
   );
 }
+```

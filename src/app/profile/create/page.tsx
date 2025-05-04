@@ -16,33 +16,25 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { Header } from "@/components/layout/header";
 import type { Profile } from '@/types/profile'; // Assuming profile type exists
+import { saveProfile } from '@/lib/mock-data'; // Use centralized mock function
 
-// Placeholder function for saving profile data - replace with actual API call
-async function saveProfile(data: ProfileFormData): Promise<Profile> {
-  console.log("Saving profile data:", data);
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  // Simulate success - return the saved data (or mock ID)
-  return {
-      id: 'mock-user-id', // Replace with actual ID from backend
-      name: data.name,
-      email: data.email,
-      bio: data.bio,
-      skills: data.skills.split(',').map(s => s.trim()).filter(s => s), // Simple comma-separated skills
-      avatarUrl: data.avatarUrl || `https://picsum.photos/100/100?random=${Math.random()}`, // Add placeholder if empty
-  };
-}
-
+// Assume this is the ID of the currently logged-in user
+// Replace with actual authentication logic
+const MOCK_LOGGED_IN_USER_ID = 'mock-user-id';
+// Assume we can get the user's email from auth
+const MOCK_LOGGED_IN_USER_EMAIL = 'alice.dev@example.com';
 
 // Define Zod schema for profile form validation
 const profileSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters long." }),
-  email: z.string().email({ message: "Please enter a valid email address." }),
+  // Email is likely pre-filled and potentially non-editable
+  // email: z.string().email({ message: "Please enter a valid email address." }),
   bio: z.string().max(500, { message: "Bio cannot exceed 500 characters." }).optional(),
   skills: z.string().max(200, { message: "Skills list cannot exceed 200 characters." }).optional().describe('Comma-separated list of skills'),
   avatarUrl: z.string().url({ message: "Please enter a valid URL for the avatar." }).optional().or(z.literal('')),
 });
 
+// We'll use a slightly different type for the form data excluding the email
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function CreateProfilePage() {
@@ -54,7 +46,7 @@ export default function CreateProfilePage() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: "",
-      email: "", // TODO: Pre-fill if user is authenticated
+      // email: MOCK_LOGGED_IN_USER_EMAIL, // Pre-fill email
       bio: "",
       skills: "",
       avatarUrl: "",
@@ -64,7 +56,15 @@ export default function CreateProfilePage() {
   const onSubmit = async (data: ProfileFormData) => {
     setIsSubmitting(true);
     try {
-      const savedProfile = await saveProfile(data);
+        // Construct the full profile data including email and ID
+        const fullProfileData: Omit<Profile, 'id'> = {
+            ...data,
+            email: MOCK_LOGGED_IN_USER_EMAIL, // Add email back
+            skills: data.skills ? data.skills.split(',').map(s => s.trim()).filter(s => s) : [], // Convert skills string to array
+            avatarUrl: data.avatarUrl || `https://picsum.photos/100/100?random=${MOCK_LOGGED_IN_USER_ID}`, // Default avatar if none provided
+        };
+
+      const savedProfile = await saveProfile(MOCK_LOGGED_IN_USER_ID, fullProfileData);
       toast({
         title: "Profile Created!",
         description: "Your profile has been successfully saved.",
@@ -102,25 +102,22 @@ export default function CreateProfilePage() {
                     <FormItem>
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                        <Input placeholder="e.g., Jane Doe" {...field} disabled={isSubmitting}/>
+                        <Input placeholder="e.g., Alice Developer" {...field} disabled={isSubmitting}/>
                         </FormControl>
                         <FormMessage />
                     </FormItem>
                     )}
                 />
-                 <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Email Address</FormLabel>
-                        <FormControl>
-                        <Input type="email" placeholder="e.g., jane.doe@example.com" {...field} disabled={isSubmitting}/>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+                 {/* Email Field - Display Only */}
+                 <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                    <Input type="email" value={MOCK_LOGGED_IN_USER_EMAIL} disabled readOnly />
+                    </FormControl>
+                    <p className="text-sm text-muted-foreground">Email associated with your account.</p>
+                    <FormMessage />
+                </FormItem>
+
                  <FormField
                     control={form.control}
                     name="bio"
@@ -129,7 +126,7 @@ export default function CreateProfilePage() {
                         <FormLabel>Bio</FormLabel>
                         <FormControl>
                         <Textarea
-                            placeholder="Tell clients about yourself and your experience..."
+                            placeholder="Tell clients about yourself and your experience (max 500 chars)..."
                             rows={4}
                             {...field}
                             disabled={isSubmitting}
@@ -180,3 +177,4 @@ export default function CreateProfilePage() {
     </div>
   );
 }
+```

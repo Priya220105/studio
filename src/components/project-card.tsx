@@ -7,19 +7,21 @@ import { CalendarDays, DollarSign, Briefcase } from "lucide-react"; // Keep nece
 import { formatDistanceToNow } from 'date-fns';
 import Link from "next/link";
 import { iconMap } from './project-card-icon-map'; // Import shared icon map
+import { cn } from "@/lib/utils"; // Import cn
 
 
 interface ProjectCardProps {
   project: Project;
+  className?: string; // Add className prop
 }
 
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, className }: ProjectCardProps) {
   const deadlineText = formatDistanceToNow(project.deadline, { addSuffix: true });
   const IconComponent = iconMap[project.categoryIcon] || Briefcase; // Default to Briefcase icon
 
   return (
-    <Card className="flex flex-col justify-between hover:shadow-lg transition-shadow duration-200">
+    <Card className={cn("flex flex-col justify-between hover:shadow-lg transition-shadow duration-200", className)}> {/* Apply className */}
       <CardHeader>
         <div className="flex justify-between items-start mb-2">
           {/* Link the title to the project details page */}

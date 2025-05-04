@@ -23,48 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; //
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { iconMap } from '@/components/project-card-icon-map'; // Import shared icon map
-
-// Mock function to fetch project details - replace with actual API call
-async function fetchProjectDetails(projectId: string): Promise<Project | null> {
-    console.log(`Fetching project details for ID: ${projectId}`);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const projects: Project[] = [
-      { id: "1", title: "Build a Responsive E-commerce Website", description: "Need a modern e-commerce site with payment gateway integration. Must be mobile-friendly. Key requirements: Shopify integration, secure checkout, product filtering.", budget: 5000, deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), categoryIcon: "ShoppingCart", clientId: "client-abc", clientName: "Global Mart Inc.", clientAvatarUrl: `https://picsum.photos/40/40?random=clientA` },
-      { id: "2", title: "Develop a Mobile App for Task Management", description: "Create a cross-platform mobile app (iOS & Android) for managing daily tasks. Requirements: User authentication, task creation/editing, push notifications.", budget: 8000, deadline: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000), categoryIcon: "Smartphone", clientId: "client-def", clientName: "Productivity Co.", clientAvatarUrl: `https://picsum.photos/40/40?random=clientB` },
-      { id: "3", title: "Design a Logo and Brand Identity", description: "Looking for a creative designer to craft a unique logo and branding guidelines for a new startup. Deliverables: Logo files (vector, png), color palette, typography guidelines.", budget: 1500, deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), categoryIcon: "Palette", clientId: "client-ghi", clientName: "Innovate Solutions", clientAvatarUrl: `https://picsum.photos/40/40?random=clientC` },
-      { id: "4", title: "Write Blog Content for Tech Startup", description: "Need engaging blog posts about AI and machine learning trends. 4 posts per month. Requirements: SEO optimized, 1000+ words each, original content.", budget: 1000, deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), categoryIcon: "PenTool", clientId: "client-jkl", clientName: "Future Tech Blog", clientAvatarUrl: `https://picsum.photos/40/40?random=clientD` },
-      // Add clientId, clientName, clientAvatarUrl to other projects if needed
-    ];
-    const project = projects.find(p => p.id === projectId);
-    return project || null;
-}
-
-// Mock function to fetch client feedback history - replace with actual API call
-async function fetchClientFeedback(clientId: string): Promise<{ feedback: Feedback[], stats: RatingStats } | null> {
-    console.log(`Fetching feedback for client ID: ${clientId}`);
-    await new Promise(resolve => setTimeout(resolve, 600));
-    // Simulate feedback *received by* this client from freelancers
-    const sampleFeedback: Feedback[] = [
-        { id: 'cfb1', projectId: 'projX', authorId: 'freelancerA', recipientId: clientId, rating: 5, comment: 'Clear communication, paid promptly. A pleasure to work with!', submittedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), authorRole: 'freelancer' },
-        { id: 'cfb2', projectId: 'projY', authorId: 'freelancerB', recipientId: clientId, rating: 4, comment: 'Project scope was well-defined. Some minor delays in providing assets.', submittedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), authorRole: 'freelancer' },
-         { id: 'cfb3', projectId: 'projZ', authorId: 'freelancerC', recipientId: "other-client", rating: 5, comment: 'Irrelevant feedback', submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), authorRole: 'freelancer' },
-    ].filter(f => f.recipientId === clientId); // Ensure feedback is for the correct client
-
-    if (sampleFeedback.length === 0) {
-        return { feedback: [], stats: { averageRating: 0, totalRatings: 0 } };
-    }
-
-    const totalRatingSum = sampleFeedback.reduce((sum, fb) => sum + fb.rating, 0);
-    const averageRating = totalRatingSum / sampleFeedback.length;
-
-    return {
-        feedback: sampleFeedback.sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime()),
-        stats: {
-            averageRating: Math.round(averageRating * 10) / 10,
-            totalRatings: sampleFeedback.length,
-        }
-    };
-}
+import { fetchProjectDetails, fetchClientFeedback } from '@/lib/mock-data'; // Use centralized mock functions
 
 
 export default function ProjectDetailsPage() {
@@ -87,6 +46,7 @@ export default function ProjectDetailsPage() {
                 // Fetch client feedback if client ID exists
                 if (projectData.clientId) {
                     try {
+                        // Use the specific fetchClientFeedback function
                         const feedbackResult = await fetchClientFeedback(projectData.clientId);
                         setClientFeedback(feedbackResult);
                     } catch (feedbackError) {
@@ -195,6 +155,18 @@ export default function ProjectDetailsPage() {
                                 Submit Proposal
                             </Button>
                         </Link>
+                         {/* Add Link to leave feedback if appropriate (e.g., project completed) */}
+                        {/* Example condition - replace with actual logic */}
+                        { project.status === 'completed' && project.freelancerId === MOCK_LOGGED_IN_USER_ID && (
+                            <Link href={`/projects/${project.id}/leave-feedback?role=freelancer`} passHref className="w-full md:w-auto ml-4">
+                                <Button variant="outline" className="w-full md:w-auto">Leave Feedback for Client</Button>
+                            </Link>
+                         )}
+                         { project.status === 'completed' && project.clientId === MOCK_LOGGED_IN_USER_ID && (
+                              <Link href={`/projects/${project.id}/leave-feedback?role=client`} passHref className="w-full md:w-auto ml-4">
+                                <Button variant="outline" className="w-full md:w-auto">Leave Feedback for Freelancer</Button>
+                            </Link>
+                         )}
                     </CardFooter>
                 </Card>
 
@@ -249,3 +221,16 @@ export default function ProjectDetailsPage() {
     </div>
   );
 }
+
+
+// Add MOCK_LOGGED_IN_USER_ID constant if not already present
+const MOCK_LOGGED_IN_USER_ID = 'mock-user-id'; // Example ID
+
+// Add a placeholder 'status' to Project type if needed for feedback button logic
+declare module '@/types/project' {
+    interface Project {
+        status?: 'open' | 'in_progress' | 'completed' | 'cancelled'; // Example statuses
+        freelancerId?: string; // ID of the hired freelancer
+    }
+}
+```

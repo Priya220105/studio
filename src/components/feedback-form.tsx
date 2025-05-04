@@ -13,25 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Star } from 'lucide-react';
 import type { Feedback } from '@/types/feedback'; // Import Feedback type
-
-// Placeholder function for submitting feedback - replace with actual API call
-async function submitFeedbackApi(data: FeedbackFormData & { projectId: string; recipientId: string; authorId: string, authorRole: 'client' | 'freelancer' }): Promise<Feedback> {
-  console.log("Submitting feedback data:", data);
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  // Simulate success - return the saved data with a mock ID and timestamp
-  return {
-      id: `feedback-${Math.random().toString(36).substring(7)}`,
-      projectId: data.projectId,
-      authorId: data.authorId, // Replace with actual authenticated user ID
-      recipientId: data.recipientId,
-      rating: data.rating,
-      comment: data.comment,
-      submittedAt: new Date(),
-      authorRole: data.authorRole,
-  };
-}
-
+import { submitFeedbackApi } from '@/lib/mock-data'; // Use centralized mock function
 
 // Define Zod schema for feedback form validation
 const feedbackSchema = z.object({
@@ -44,12 +26,13 @@ type FeedbackFormData = z.infer<typeof feedbackSchema>;
 interface FeedbackFormProps {
     projectId: string;
     recipientId: string; // The user being reviewed
+    recipientName?: string; // Optional: Name of the user being reviewed for display
     authorId: string; // The user leaving the review (should come from auth)
     authorRole: 'client' | 'freelancer';
     onFeedbackSubmitted?: (feedback: Feedback) => void; // Optional callback
 }
 
-export function FeedbackForm({ projectId, recipientId, authorId, authorRole, onFeedbackSubmitted }: FeedbackFormProps) {
+export function FeedbackForm({ projectId, recipientId, recipientName, authorId, authorRole, onFeedbackSubmitted }: FeedbackFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,14 +51,16 @@ export function FeedbackForm({ projectId, recipientId, authorId, authorRole, onF
     }
     setIsSubmitting(true);
     try {
-      const feedbackData = {
-        ...data,
+      // Construct the data expected by the API function
+      const feedbackPayload = {
         projectId,
         recipientId,
         authorId,
-        authorRole
-      }
-      const savedFeedback = await submitFeedbackApi(feedbackData);
+        authorRole,
+        rating: data.rating,
+        comment: data.comment,
+      };
+      const savedFeedback = await submitFeedbackApi(feedbackPayload);
       toast({
         title: "Feedback Submitted!",
         description: "Thank you for your feedback.",
@@ -96,11 +81,14 @@ export function FeedbackForm({ projectId, recipientId, authorId, authorRole, onF
     }
   };
 
+  const recipientRole = authorRole === 'client' ? 'freelancer' : 'client';
+  const recipientDisplayName = recipientName || `the ${recipientRole}`;
+
   return (
     <Card className="w-full max-w-lg">
       <CardHeader>
         <CardTitle>Leave Feedback</CardTitle>
-        <CardDescription>Share your experience regarding this project and the {authorRole === 'client' ? 'freelancer' : 'client'}.</CardDescription>
+        <CardDescription>Share your experience with {recipientDisplayName} regarding project "{projectId}".</CardDescription> {/* Update description */}
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -110,24 +98,29 @@ export function FeedbackForm({ projectId, recipientId, authorId, authorRole, onF
               name="rating"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel>Rating <span className="text-destructive">*</span></FormLabel>
+                  <FormLabel>Overall Rating <span className="text-destructive">*</span></FormLabel>
                   <FormControl>
-                    {/* Using RadioGroup for stars - could use a custom star component too */}
+                    {/* Using RadioGroup for stars */}
                     <RadioGroup
                       onValueChange={(value) => field.onChange(Number(value))}
-                      // defaultValue={field.value.toString()} // Does not work well with number init 0
+                      // defaultValue={field.value.toString()} // Initial 0 won't match
+                      value={field.value > 0 ? field.value.toString() : ""} // Ensure value matches one of the items
                       className="flex space-x-2"
                       disabled={isSubmitting}
                     >
                       {[1, 2, 3, 4, 5].map((value) => (
-                        <FormItem key={value} className="flex items-center space-x-1 space-y-0 cursor-pointer">
+                        <FormItem key={value} className="flex items-center space-x-1 space-y-0 cursor-pointer group">
                            <FormControl>
                                 <RadioGroupItem value={value.toString()} id={`rating-${value}`} className="sr-only" />
                             </FormControl>
                           <FormLabel htmlFor={`rating-${value}`} className="cursor-pointer">
                             <Star
-                              className={`h-6 w-6 transition-colors ${field.value >= value ? 'text-accent fill-accent' : 'text-muted-foreground/50 hover:text-accent/70'}`}
-
+                              className={cn(
+                                  "h-6 w-6 transition-colors text-muted-foreground/30 group-hover:text-accent/70", // Base and group hover
+                                  field.value >= value && "text-accent fill-accent", // Selected state
+                                  // Individual hover effect (optional, might flicker)
+                                  // `hover:text-accent/70`
+                              )}
                             />
                           </FormLabel>
                         </FormItem>
@@ -146,7 +139,7 @@ export function FeedbackForm({ projectId, recipientId, authorId, authorRole, onF
                   <FormLabel>Comment <span className="text-destructive">*</span></FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe your experience..."
+                      placeholder={`Describe your experience working with ${recipientDisplayName}...`}
                       rows={5}
                       {...field}
                       disabled={isSubmitting}
@@ -168,3 +161,4 @@ export function FeedbackForm({ projectId, recipientId, authorId, authorRole, onF
     </Card>
   );
 }
+```

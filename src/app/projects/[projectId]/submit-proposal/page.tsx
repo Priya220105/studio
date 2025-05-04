@@ -17,21 +17,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Wand2, ArrowLeft } from 'lucide-react'; // Add ArrowLeft
 import type { Project } from "@/types/project";
 import { Header } from "@/components/layout/header";
+import { fetchProjectDetails, submitProposalApi } from '@/lib/mock-data'; // Use centralized mock functions
 
-// Mock function to fetch project details - replace with actual API call
-async function fetchProjectDetails(projectId: string): Promise<Project | null> {
-    console.log(`Fetching project details for ID: ${projectId}`);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    // Ensure sample data here matches the structure in other files (e.g., includes client info)
-    const projects: Project[] = [
-        { id: "1", title: "Build a Responsive E-commerce Website", description: "Need a modern e-commerce site with payment gateway integration. Must be mobile-friendly. Key requirements: Shopify integration, secure checkout, product filtering.", budget: 5000, deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), categoryIcon: "ShoppingCart", clientId: "client-abc", clientName: "Global Mart Inc." },
-        { id: "2", title: "Develop a Mobile App for Task Management", description: "Create a cross-platform mobile app (iOS & Android) for managing daily tasks. Requirements: User authentication, task creation/editing, push notifications.", budget: 8000, deadline: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000), categoryIcon: "Smartphone", clientId: "client-def", clientName: "Productivity Co." },
-        { id: "3", title: "Design a Logo and Brand Identity", description: "Looking for a creative designer to craft a unique logo and branding guidelines for a new startup. Deliverables: Logo files (vector, png), color palette, typography guidelines.", budget: 1500, deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), categoryIcon: "Palette", clientId: "client-ghi", clientName: "Innovate Solutions" },
-        { id: "4", title: "Write Blog Content for Tech Startup", description: "Need engaging blog posts about AI and machine learning trends. 4 posts per month. Requirements: SEO optimized, 1000+ words each, original content.", budget: 1000, deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), categoryIcon: "PenTool", clientId: "client-jkl", clientName: "Future Tech Blog" },
-    ];
-    const project = projects.find(p => p.id === projectId);
-    return project || null;
-}
+// Assume this is the ID of the currently logged-in user
+// Replace with actual authentication logic
+const MOCK_LOGGED_IN_USER_ID = 'mock-user-id';
 
 // Define Zod schema for form validation
 const proposalSchema = z.object({
@@ -55,7 +45,7 @@ export default function SubmitProposalPage() {
     resolver: zodResolver(proposalSchema),
     defaultValues: {
       coverLetter: "",
-      proposedRate: 0,
+      proposedRate: undefined, // Use undefined for better placeholder behavior
     },
   });
 
@@ -66,8 +56,8 @@ export default function SubmitProposalPage() {
         .then(data => {
             if (data) {
                 setProject(data);
-                 // Pre-fill proposed rate based on budget if desired (example)
-                 // form.setValue("proposedRate", data.budget * 0.8);
+                 // Optionally Pre-fill proposed rate based on budget
+                 form.setValue("proposedRate", data.budget ? Math.round(data.budget * 0.9) : undefined);
             } else {
                 toast({
                     title: "Error",
@@ -88,7 +78,7 @@ export default function SubmitProposalPage() {
         })
         .finally(() => setIsLoadingProject(false));
     }
-   }, [projectId, toast, router, form]); // Added form to dependency array if using setValue
+   }, [projectId, toast, router, form]); // Added form to dependency array
 
    const handleEnhanceProposal = async () => {
     if (!project) return;
@@ -127,12 +117,12 @@ export default function SubmitProposalPage() {
    };
 
   const onSubmit = async (data: ProposalFormData) => {
+    if (!project) return; // Should not happen if loading state is handled
+
     setIsSubmitting(true);
-    console.log("Submitting proposal:", data);
-    // TODO: Replace with actual API call to submit the proposal
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Use the centralized mock API function
+      await submitProposalApi(project.id, MOCK_LOGGED_IN_USER_ID, data);
       toast({
         title: "Proposal Submitted!",
         description: "Your proposal has been successfully submitted.",
@@ -233,7 +223,13 @@ export default function SubmitProposalPage() {
                       <FormItem>
                           <FormLabel>Proposed Rate (USD) <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                          <Input type="number" placeholder={`e.g., ${project.budget ? Math.round(project.budget * 0.8) : 1000}`} {...field} disabled={isSubmitting}/>
+                          <Input
+                            type="number"
+                            step="any" // Allow decimals if needed
+                            placeholder={`e.g., ${project.budget ? Math.round(project.budget * 0.9) : 1000}`}
+                            {...field}
+                            disabled={isSubmitting}
+                           />
                           </FormControl>
                           <FormMessage />
                       </FormItem>
@@ -254,3 +250,4 @@ export default function SubmitProposalPage() {
     </div>
   );
 }
+```

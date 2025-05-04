@@ -15,58 +15,11 @@ import { RatingDisplay } from '@/components/rating-display'; // Import RatingDis
 import { FeedbackList } from '@/components/feedback-list'; // Import FeedbackList
 import type { Feedback, RatingStats } from '@/types/feedback'; // Import Feedback types
 import { Separator } from '@/components/ui/separator';
+import { fetchUserProfile, fetchUserFeedback } from '@/lib/mock-data'; // Use centralized mock functions
 
-// Mock function to fetch user profile data - replace with actual API call
-async function fetchUserProfile(): Promise<Profile | null> {
-    console.log("Fetching user profile...");
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Simulate scenarios: profile exists or not
-    const hasProfile = Math.random() > 0.3; // 70% chance profile exists
-
-    if (hasProfile) {
-        return {
-            id: "mock-user-id",
-            name: "Freelancer Name",
-            email: "freelancer@example.com", // Should come from auth ideally
-            skills: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Web Design"],
-            bio: "Experienced web developer specializing in modern frontend frameworks. Passionate about creating intuitive and performant user interfaces.",
-            avatarUrl: `https://picsum.photos/100/100?random=${Math.ceil(Math.random() * 10)}`, // Placeholder with slight variation
-        };
-    } else {
-        return null; // Simulate no profile found
-    }
-}
-
-// Mock function to fetch user feedback and rating stats - replace with actual API call
-async function fetchUserFeedback(userId: string): Promise<{ feedback: Feedback[], stats: RatingStats } | null> {
-    console.log(`Fetching feedback for user ID: ${userId}`);
-     // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 700));
-
-    // Simulate feedback data
-    const sampleFeedback: Feedback[] = [
-        { id: 'fb1', projectId: 'projA', authorId: 'client1', recipientId: userId, rating: 5, comment: 'Excellent work, delivered ahead of schedule!', submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), authorRole: 'client' },
-        { id: 'fb2', projectId: 'projB', authorId: 'client2', recipientId: userId, rating: 4, comment: 'Good communication and quality results.', submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), authorRole: 'client' },
-        { id: 'fb3', projectId: 'projC', authorId: 'freelancer1', recipientId: userId, rating: 5, comment: 'Great client, clear requirements and prompt payment.', submittedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), authorRole: 'freelancer' }, // Example of feedback received *as* a client
-    ].filter(f => f.recipientId === userId); // Filter based on who received
-
-    if (sampleFeedback.length === 0) {
-        return { feedback: [], stats: { averageRating: 0, totalRatings: 0 } };
-    }
-
-    const totalRatingSum = sampleFeedback.reduce((sum, fb) => sum + fb.rating, 0);
-    const averageRating = totalRatingSum / sampleFeedback.length;
-
-    return {
-        feedback: sampleFeedback.sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime()), // Sort newest first
-        stats: {
-            averageRating: Math.round(averageRating * 10) / 10, // Round to one decimal place
-            totalRatings: sampleFeedback.length,
-        }
-    };
-}
+// Assume this is the ID of the currently logged-in user
+// Replace with actual authentication logic
+const MOCK_LOGGED_IN_USER_ID = 'mock-user-id';
 
 
 export default function ProfilePage() {
@@ -77,11 +30,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setIsLoading(true);
-    fetchUserProfile()
+    fetchUserProfile(MOCK_LOGGED_IN_USER_ID) // Use the logged-in user ID
       .then(async (profileData) => {
         setProfile(profileData);
         if (profileData) {
-           // If profile exists, fetch feedback
+           // If profile exists, fetch feedback for this user
            try {
                 const feedbackResult = await fetchUserFeedback(profileData.id);
                 setFeedbackData(feedbackResult);
@@ -132,7 +85,7 @@ export default function ProfilePage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                         <p className="text-muted-foreground mb-4">Create your profile to start bidding on projects.</p>
+                         <p className="text-muted-foreground mb-4">Create your profile to start bidding on projects and use AI matching.</p>
                          <Link href="/profile/create" passHref>
                              <Button>Create Profile</Button>
                          </Link>
@@ -171,11 +124,18 @@ export default function ProfilePage() {
                {feedbackData && feedbackData.stats.totalRatings === 0 && (
                    <p className="text-sm text-muted-foreground mt-2">No ratings yet</p>
                )}
+                {/* Loading state for ratings */}
+               {!feedbackData && (
+                    <div className="flex items-center justify-center mt-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-2" />
+                        <span className="text-sm text-muted-foreground">Loading ratings...</span>
+                    </div>
+               )}
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div>
                   <h4 className="font-semibold mb-2 text-lg">Bio</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{profile.bio || "No bio provided."}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{profile.bio || "No bio provided."}</p>
               </div>
               <div>
                   <h4 className="font-semibold mb-2 text-lg">Skills</h4>
@@ -223,3 +183,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+```

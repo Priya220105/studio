@@ -10,37 +10,7 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Project } from '@/types/project'; // Assuming project type exists
 import type { Profile } from '@/types/profile'; // Assuming profile type exists
-
-// Mock function to fetch project details - replace with actual API call
-async function fetchProjectDetails(projectId: string): Promise<Project | null> {
-    console.log(`Fetching project details for feedback page: ${projectId}`);
-    await new Promise(resolve => setTimeout(resolve, 400));
-    // Simple mock data needed for context
-    const projects: Partial<Project>[] = [
-        { id: "1", title: "Build a Responsive E-commerce Website", clientId: "client-abc", /* other fields */ },
-        { id: "2", title: "Develop a Mobile App for Task Management", clientId: "client-def", /* other fields */ },
-        // Assume freelancerId might be stored on the project after completion/award
-        { id: "projA", title: "Completed Project A", clientId: "client1", freelancerId: "mock-user-id"},
-        { id: "projB", title: "Completed Project B", clientId: "client2", freelancerId: "mock-user-id"},
-        { id: "projC", title: "Completed Project C", clientId: "mock-user-id", freelancerId: "freelancer1"}, // Case where current user is client
-    ];
-    const project = projects.find(p => p.id === projectId) as Project | undefined; // Cast needed if using partial type
-    return project || null;
-}
-
-// Mock function to fetch minimal profile details (just name/ID) - replace with actual API call
-async function fetchMinimalProfile(userId: string): Promise<Pick<Profile, 'id' | 'name'> | null> {
-     console.log(`Fetching minimal profile for feedback recipient: ${userId}`);
-     await new Promise(resolve => setTimeout(resolve, 300));
-     // Simulate finding user based on ID
-     const users = {
-         'mock-user-id': { id: 'mock-user-id', name: 'Freelancer Name' },
-         'client1': { id: 'client1', name: 'Client One Inc.' },
-         'client2': { id: 'client2', name: 'Client Two Co.' },
-         'freelancer1': { id: 'freelancer1', name: 'Expert Developer' },
-     };
-     return users[userId as keyof typeof users] || null;
-}
+import { fetchProjectDetails, fetchUserProfile } from '@/lib/mock-data'; // Use centralized mock functions
 
 // Assume this is the ID of the currently logged-in user
 // Replace with actual authentication logic
@@ -49,7 +19,7 @@ const MOCK_LOGGED_IN_USER_ID = 'mock-user-id';
 export default function LeaveFeedbackPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams(); // To potentially get role context
+  const searchParams = useSearchParams(); // To potentially get role context from URL
 
   const projectId = params.projectId as string;
   const { toast } = useToast();
@@ -64,24 +34,8 @@ export default function LeaveFeedbackPage() {
   let authorRole: 'client' | 'freelancer' | null = null;
   let recipientId: string | null = null;
 
-  if (project) {
-      if (project.clientId === authorId) {
-          authorRole = 'client';
-          recipientId = project.freelancerId; // Assuming freelancerId is available on project
-      } else if (project.freelancerId === authorId) {
-          authorRole = 'freelancer';
-          recipientId = project.clientId;
-      }
-  }
-
-  // Determine role from query params if needed (e.g., ?role=client)
-  const roleFromQuery = searchParams.get('role');
-  if (!authorRole && (roleFromQuery === 'client' || roleFromQuery === 'freelancer')) {
-     // This part is less reliable, needs project data ideally
-     // authorRole = roleFromQuery;
-     // recipientId = searchParams.get('recipientId'); // Needs recipient ID passed too
-     console.warn("Feedback role determined by query param - less reliable.");
-  }
+  // Get intended role from query param if provided, useful if logic is complex elsewhere
+  const roleFromQuery = searchParams.get('role') as 'client' | 'freelancer' | null;
 
 
   useEffect(() => {
@@ -93,48 +47,65 @@ export default function LeaveFeedbackPage() {
 
     setIsLoading(true);
     setError(null);
-    Promise.all([
-        fetchProjectDetails(projectId),
-        // We need recipientId determined *before* fetching their profile
-    ]).then(async ([projectData]) => {
-        if (!projectData) {
-            throw new Error("Project not found.");
-        }
-        setProject(projectData);
+    fetchProjectDetails(projectId)
+        .then(async (projectData) => {
+            if (!projectData) {
+                throw new Error("Project not found.");
+            }
+            setProject(projectData);
 
-        // Determine recipient based on project data and logged-in user
-        let determinedRecipientId: string | null = null;
-        if (projectData.clientId === authorId && projectData.freelancerId) {
-            determinedRecipientId = projectData.freelancerId;
-        } else if (projectData.freelancerId === authorId && projectData.clientId) {
-            determinedRecipientId = projectData.clientId;
-        }
+            // Determine recipient based on project data and logged-in user
+            let determinedRecipientId: string | null = null;
+            let determinedAuthorRole: 'client' | 'freelancer' | null = null;
 
-        if (!determinedRecipientId) {
-            // Fallback logic if IDs aren't on project, maybe use query params?
-            // This scenario indicates missing data or logic elsewhere.
-            throw new Error("Could not determine recipient for feedback.");
-        }
+            if (projectData.clientId === authorId && projectData.freelancerId) {
+                determinedAuthorRole = 'client';
+                determinedRecipientId = projectData.freelancerId;
+            } else if (projectData.freelancerId === authorId && projectData.clientId) {
+                determinedAuthorRole = 'freelancer';
+                determinedRecipientId = projectData.clientId;
+            }
 
-        const recipientData = await fetchMinimalProfile(determinedRecipientId);
-        if (!recipientData) {
-            throw new Error("Recipient user not found.");
-        }
-        setRecipient(recipientData);
+            // Validate against query param if present
+            if (roleFromQuery && roleFromQuery !== determinedAuthorRole) {
+                 console.warn(`Role mismatch: Query param says '${roleFromQuery}', project data implies '${determinedAuthorRole}'. Trusting project data.`);
+                 // Optionally throw an error or show a message if mismatch is critical
+                 // throw new Error("Role mismatch detected.");
+            }
 
-    }).catch(err => {
-        console.error("Error loading feedback context:", err);
-        setError(err.message || "Failed to load necessary information for feedback.");
-        toast({
-            title: "Error",
-            description: err.message || "Could not load feedback page.",
-            variant: "destructive",
+             if (!determinedRecipientId || !determinedAuthorRole) {
+                throw new Error("Could not determine recipient or author role for feedback based on project data and logged-in user.");
+            }
+
+            // Set state variables needed by the form
+            recipientId = determinedRecipientId; // Assign to outer scope variable
+            authorRole = determinedAuthorRole; // Assign to outer scope variable
+
+            // Fetch minimal recipient details (name)
+            const recipientData = await fetchUserProfile(determinedRecipientId); // Use fetchUserProfile which returns full profile
+            if (!recipientData) {
+                throw new Error("Recipient user not found.");
+            }
+            // Extract only needed fields for display
+            setRecipient({ id: recipientData.id, name: recipientData.name });
+
+        }).catch(err => {
+            console.error("Error loading feedback context:", err);
+            setError(err.message || "Failed to load necessary information for feedback.");
+            toast({
+                title: "Error",
+                description: err.message || "Could not load feedback page.",
+                variant: "destructive",
+            });
+            // Optionally redirect on critical errors
+            // router.push(`/projects/${projectId}`);
+        }).finally(() => {
+            setIsLoading(false);
         });
-    }).finally(() => {
-        setIsLoading(false);
-    });
 
-  }, [projectId, toast, authorId]); // Add authorId
+  // Dependencies: projectId, toast, authorId, roleFromQuery (if used for validation)
+  }, [projectId, toast, authorId, roleFromQuery, router]); // Add router to dependencies
+
 
   const handleFeedbackSubmitted = () => {
     toast({
@@ -164,12 +135,12 @@ export default function LeaveFeedbackPage() {
         <div className="flex flex-col min-h-screen bg-secondary">
             <Header />
             <main className="flex-1 container mx-auto p-4 md:p-8">
-                <Link href={`/projects/${projectId}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
+                <Link href={`/projects/${projectId || ''}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Project
                 </Link>
-                <div className="flex flex-1 justify-center items-center mt-16 bg-destructive/10 border border-destructive text-destructive p-4 rounded-md max-w-md mx-auto">
-                    <p>Error: {error || "Could not prepare feedback form. Missing required information."}</p>
+                <div className="flex flex-1 justify-center items-center mt-16 bg-destructive/10 border border-destructive text-destructive p-4 rounded-md max-w-md mx-auto text-center">
+                    <p>Error: {error || "Could not prepare feedback form. Missing required information or permissions."}</p>
                 </div>
             </main>
         </div>
@@ -185,9 +156,11 @@ export default function LeaveFeedbackPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Project: {project.title}
             </Link>
+            {/* Pass recipient name for better description */}
             <FeedbackForm
                 projectId={projectId}
                 recipientId={recipientId}
+                recipientName={recipient.name} // Pass recipient name
                 authorId={authorId}
                 authorRole={authorRole}
                 onFeedbackSubmitted={handleFeedbackSubmitted}
@@ -197,3 +170,4 @@ export default function LeaveFeedbackPage() {
     </div>
   );
 }
+```
