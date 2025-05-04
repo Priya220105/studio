@@ -55,10 +55,10 @@ Bio: {{{freelancerProfile.bio}}}
 Available Projects:
 {{#each availableProjects}}
 ---
-Project ID: {{id}}
-Title: {{title}}
-Description: {{{description}}}
-Budget: {{#if budget}}${{budget}}{{else}}Not specified{{/if}}
+Project ID: {{this.id}}
+Title: {{this.title}}
+Description: {{{this.description}}}
+Budget: {{#if this.budget}}$ {{this.budget}}{{else}}Not specified{{/if}}
 ---
 {{/each}}
 
