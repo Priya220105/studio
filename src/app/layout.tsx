@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import { Inter, Roboto_Mono } from 'next/font/google'; // Keep original font imports
 import './globals.css';
@@ -19,7 +18,6 @@ const roboto_mono = Roboto_Mono({
   variable: '--font-roboto-mono',
 });
 
-
 export const metadata: Metadata = {
   title: 'TaskTender', // Changed title
   description: 'Project bidding app for freelancers',
@@ -27,9 +25,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode; // Use a more straightforward type definition
+}) {
   return (
     // Apply font variables using cn utility on the html tag
     <html lang="en" className={cn("antialiased", inter.variable, roboto_mono.variable)} suppressHydrationWarning>
