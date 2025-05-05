@@ -1,41 +1,32 @@
-import type { Metadata } from 'next';
-import { Inter, Roboto_Mono } from 'next/font/google'; // Keep original font imports
-import './globals.css';
-import { Toaster } from "@/components/ui/toaster";
-import { cn } from "@/lib/utils"; // Import cn utility
+// src/app/layout.tsx
+import './globals.css'
+import type { ReactNode } from 'react'
+import { Inter, Roboto_Mono } from 'next/font/google'
 
-// Configure Inter font
 const inter = Inter({
   subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-});
+  variable: '--font-inter',        // must match your CSS var
+  weight: ['400', '700'],          // adjust as needed
+})
 
-// Configure Roboto Mono font
-const roboto_mono = Roboto_Mono({
+const robotoMono = Roboto_Mono({
   subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-roboto-mono',
-});
+  variable: '--font-roboto-mono',  // must match your CSS var
+  weight: ['400'],                 // or whatever weights you need
+})
 
-export const metadata: Metadata = {
-  title: 'TaskTender', // Changed title
-  description: 'Project bidding app for freelancers',
-};
+export const metadata = {
+  title: 'My App',
+  description: 'Example with Next.js Google Font',
+}
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode; // Use a more straightforward type definition
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    // Apply font variables using cn utility on the html tag
-    <html lang="en" className={cn("antialiased", inter.variable, roboto_mono.variable)} suppressHydrationWarning>
-      {/* Use body for base font application and add suppressHydrationWarning */}
-      <body className="font-sans" suppressHydrationWarning>
-        {children}
-        <Toaster />
-      </body>
+    <html
+      lang="en"
+      className={`${inter.variable} ${robotoMono.variable}`}
+    >
+      <body>{children}</body>
     </html>
-  );
+  )
 }
